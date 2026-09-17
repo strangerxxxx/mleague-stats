@@ -99,6 +99,13 @@ export type RankingRow = {
 
 export const CAREER_SCOPE = "career";
 
+export type CachedGames = {
+  fetchedAt: string;
+  source: string;
+  seasons: SeasonRef[];
+  games: Game[];
+};
+
 export type Dataset = {
   fetchedAt: string;
   source: string;

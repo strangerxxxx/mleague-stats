@@ -38,3 +38,5 @@ yarn-error.log*
 
 # local data cache
 /data/games.json
+/dist
+lambda-out.json

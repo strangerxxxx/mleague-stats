@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: M-League stats data pipeline (S3 cache + scheduled scrape)
+
+Parameters:
+  ScheduleExpression:
+    Type: String
+    Default: rate(3 hours)
+    Description: EventBridge schedule for incremental current-season updates
+
+Resources:
+  DataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "mleague-stats-data-${AWS::AccountId}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: ManagedBy
+          Value: cursor
+        - Key: CreatedBy
+          Value: cursor
+
+  DataBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref DataBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PublicReadData
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub "${DataBucket.Arn}/data/*"
+
+  UpdateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: mleague-stats-update
+      Description: Scrape M-League results and write games.json to S3
+      Runtime: nodejs22.x
+      Architectures:
+        - arm64
+      Handler: index.handler
+      MemorySize: 1024
+      Timeout: 900
+      CodeUri: ../dist/lambda/
+      Environment:
+        Variables:
+          GAMES_S3_BUCKET: !Ref DataBucket
+          GAMES_S3_KEY: data/games.json
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref DataBucket
+      Events:
+        Refresh:
+          Type: Schedule
+          Properties:
+            Schedule: !Ref ScheduleExpression
+            Description: Incremental current-season M-League scrape
+            Enabled: true
+      Tags:
+        ManagedBy: cursor
+        CreatedBy: cursor
+
+  AmplifyServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: mleague-stats-amplify
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: amplify.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess-Amplify
+      Tags:
+        - Key: ManagedBy
+          Value: cursor
+        - Key: CreatedBy
+          Value: cursor
+
+Outputs:
+  DataBucketName:
+    Value: !Ref DataBucket
+  DataUrl:
+    Value: !Sub "https://${DataBucket}.s3.${AWS::Region}.amazonaws.com/data/games.json"
+  UpdateFunctionName:
+    Value: !Ref UpdateFunction
+  AmplifyServiceRoleArn:
+    Value: !GetAtt AmplifyServiceRole.Arn

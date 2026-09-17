@@ -74,6 +74,19 @@ export function currentSeasonMonthUrls(html: string, seasonId: string): string[]
   return [...urls];
 }
 
+export function currentSeasonRefreshUrls(now = new Date()): string[] {
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const previous = new Date(year, month - 2, 1);
+  return [
+    ...new Set([
+      `${SITE}/games/`,
+      `${SITE}/games/?mly=${year}&mlm=${month}`,
+      `${SITE}/games/?mly=${previous.getFullYear()}&mlm=${previous.getMonth() + 1}`,
+    ]),
+  ];
+}
+
 export function parseGamesHtml(html: string, season: string): Game[] {
   const $ = cheerio.load(html);
   const logoMap = buildLogoMap($);

@@ -19,7 +19,7 @@ import {
   slugify,
   teamSlug,
 } from "./teams";
-import type { CachedGames } from "./fetch";
+import type { CachedGames } from "./types";
 import { roundTo } from "./format";
 
 type EntityState = {
