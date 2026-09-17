@@ -1,0 +1,112 @@
+export type Rank = 1 | 2 | 3 | 4;
+
+export type GameResult = {
+  rank: Rank;
+  player: string;
+  team: string;
+  points: number;
+  photo: string;
+  teamLogo: string;
+};
+
+export type Game = {
+  id: string;
+  season: string;
+  date: string;
+  session: number;
+  round: number;
+  results: GameResult[];
+};
+
+export type SeasonRef = {
+  id: string;
+  label: string;
+  url: string;
+  historical: boolean;
+};
+
+export type RatingEvent = {
+  gameId: string;
+  date: string;
+  season: string;
+  rank: Rank;
+  points: number;
+  ratingBefore: number;
+  ratingAfter: number;
+  delta: number;
+  opponents: string[];
+};
+
+export type SeasonRecord = {
+  season: string;
+  games: number;
+  points: number;
+  rankCounts: [number, number, number, number];
+  avgRank: number;
+  ratingStart: number;
+  ratingEnd: number;
+  peakRating: number;
+  isolatedRating: number;
+  team: string;
+  logo: string;
+};
+
+export type PlayerProfile = {
+  slug: string;
+  name: string;
+  photo: string;
+  team: string;
+  teamSlug: string;
+  rating: number;
+  peakRating: number;
+  career: SeasonRecord;
+  seasons: SeasonRecord[];
+  history: RatingEvent[];
+};
+
+export type TeamProfile = {
+  slug: string;
+  name: string;
+  shortName: string;
+  color: string;
+  logo: string;
+  rating: number;
+  peakRating: number;
+  career: SeasonRecord;
+  seasons: SeasonRecord[];
+  history: RatingEvent[];
+  roster: { name: string; slug: string; photo: string; rating: number; points: number }[];
+};
+
+export type RankingRow = {
+  rank: number;
+  slug: string;
+  name: string;
+  team: string;
+  teamSlug: string;
+  photo: string;
+  logo: string;
+  color: string;
+  rating: number;
+  ratingDelta: number;
+  games: number;
+  points: number;
+  avgRank: number;
+  rankCounts: [number, number, number, number];
+  topRate: number;
+  rentaiRate: number;
+};
+
+export const CAREER_SCOPE = "career";
+
+export type Dataset = {
+  fetchedAt: string;
+  source: string;
+  seasons: SeasonRef[];
+  latestSeason: string;
+  games: Game[];
+  players: PlayerProfile[];
+  teams: TeamProfile[];
+  playerRankings: Record<string, RankingRow[]>;
+  teamRankings: Record<string, RankingRow[]>;
+};

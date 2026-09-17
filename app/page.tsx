@@ -1,69 +1,80 @@
-import Image from "next/image";
+import { getDataset } from "@/lib/mleague/dataset";
+import { RankingTable } from "@/components/RankingTable";
+import { SearchBox } from "@/components/SearchBox";
+import { SeasonSwitcher } from "@/components/SeasonSwitcher";
+import { seasonLabel } from "@/lib/mleague/teams";
+import { CAREER_SCOPE } from "@/lib/mleague/types";
+import { resolveRankingScope } from "@/lib/mleague/stats";
 
-export default function Home() {
+export default async function Home({ searchParams }: PageProps<"/">) {
+  const dataset = await getDataset();
+  const params = await searchParams;
+  const selected = resolveRankingScope(dataset, params.season);
+  const isCareer = selected === CAREER_SCOPE;
+  const playerRows = dataset.playerRankings[selected] ?? [];
+  const teamRows = dataset.teamRankings[selected] ?? [];
+  const searchItems = [
+    ...dataset.players.map((player) => ({
+      href: `/players/${player.slug}`,
+      name: player.name,
+      kind: "player" as const,
+      sub: player.team,
+    })),
+    ...dataset.teams.map((team) => ({
+      href: `/teams/${team.slug}`,
+      name: team.name,
+      kind: "team" as const,
+      image: team.logo,
+    })),
+  ];
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <main className="mx-auto w-full max-w-6xl px-5 py-10">
+      <section className="mb-10 grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-end">
+        <div>
+          <h1 className="mt-2 text-4xl font-bold tracking-tight sm:text-5xl">
+            {isCareer ? "通算レーティング" : seasonLabel(selected)}
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <SearchBox items={searchItems} />
+      </section>
+
+      <div className="mb-10">
+        <SeasonSwitcher
+          seasons={dataset.seasons.map((season) => season.id)}
+          latestSeason={dataset.latestSeason}
+          selected={selected}
+        />
+      </div>
+
+      <section id="players" className="mb-12">
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold">個人レーティング</h2>
+          </div>
+          <span className="text-sm text-[var(--muted)]">{playerRows.length}名</span>
         </div>
-      </main>
-    </div>
+        <RankingTable rows={playerRows} kind="player" />
+      </section>
+
+      <section id="teams" className="mb-12">
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold">チームレーティング</h2>
+          </div>
+        </div>
+        <RankingTable rows={teamRows} kind="team" />
+      </section>
+
+      <section className="rounded-3xl border border-[var(--line)] bg-[var(--bg-elev)] p-6 text-sm leading-7 text-[var(--muted)]">
+        <h2 className="mb-2 text-base font-bold text-[var(--ink)]">レーティング計算式</h2>
+        <p>初期値 = R1500</p>
+        <p>(Rateの変動) = 0.5 × (対戦結果 + 補正値)</p>
+        <ul className="mt-3 list-disc pl-5">
+          <li>対戦結果: 1位 +45 / 2位 +5 / 3位 -15 / 4位 -35</li>
+          <li>補正値: (卓の平均R - 自分のR) / 40</li>
+        </ul>
+      </section>
+    </main>
   );
 }
