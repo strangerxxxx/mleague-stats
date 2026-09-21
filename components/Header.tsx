@@ -9,6 +9,9 @@ export function Header() {
           <span className="text-lg font-bold tracking-[0.18em] text-[var(--gold)]">M.STATS</span>
         </Link>
         <nav className="flex items-center gap-5 text-sm text-[var(--muted)]">
+          <Link className="hover:text-[var(--gold)]" href="/#recent">
+            直近
+          </Link>
           <Link className="hover:text-[var(--gold)]" href="/#players">
             個人
           </Link>

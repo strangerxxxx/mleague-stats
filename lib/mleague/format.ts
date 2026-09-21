@@ -45,6 +45,10 @@ export function formatDate(iso: string): string {
   return `${year}/${Number(month)}/${Number(day)}`;
 }
 
+export function formatGameStamp(iso: string, matchNo: number): string {
+  return `${formatDate(iso)} #${matchNo}`;
+}
+
 export function pointsClass(value: number): string {
   if (value > 0) return "num-pos";
   if (value < 0) return "num-neg";
