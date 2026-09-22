@@ -34,17 +34,9 @@ export type MatchDay = {
 };
 
 export function matchNumberByGameId(games: Game[]): Map<string, number> {
-  const byDate = new Map<string, Game[]>();
-  for (const game of games) {
-    const list = byDate.get(game.date) ?? [];
-    list.push(game);
-    byDate.set(game.date, list);
-  }
   const map = new Map<string, number>();
-  for (const dayGames of byDate.values()) {
-    sortGames(dayGames).forEach((game, index) => {
-      map.set(game.id, index + 1);
-    });
+  for (const game of games) {
+    map.set(game.id, game.round > 0 ? game.round : 1);
   }
   return map;
 }
