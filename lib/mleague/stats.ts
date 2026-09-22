@@ -109,6 +109,8 @@ function applyResult(
     gameId: string;
     date: string;
     season: string;
+    session: number;
+    round: number;
     rank: 1 | 2 | 3 | 4;
     points: number;
     delta: number;
@@ -120,6 +122,7 @@ function applyResult(
   },
 ) {
   const before = entity.rating;
+  const isolatedBefore = entity.isolatedRating;
   const season = ensureSeason(entity, args.season, args.team);
   const after = before + args.delta;
   entity.rating = after;
@@ -138,11 +141,15 @@ function applyResult(
     gameId: args.gameId,
     date: args.date,
     season: args.season,
+    session: args.session,
+    round: args.round,
     rank: args.rank,
     points: args.points,
     ratingBefore: before,
     ratingAfter: after,
     delta: args.delta,
+    isolatedDelta: args.isolatedDelta,
+    isolatedAfter: isolatedBefore + args.isolatedDelta,
     opponents: args.opponents,
   });
   season.games += 1;
@@ -239,6 +246,8 @@ export function buildDataset(cache: CachedGames): Dataset {
         gameId: game.id,
         date: game.date,
         season: game.season,
+        session: game.session,
+        round: game.round,
         rank: result.rank,
         points: result.points,
         delta: playerDeltas[index],
@@ -269,6 +278,8 @@ export function buildDataset(cache: CachedGames): Dataset {
           gameId: game.id,
           date: game.date,
           season: game.season,
+          session: game.session,
+          round: game.round,
           rank: result.rank,
           points: result.points,
           delta: teamDeltas[index],

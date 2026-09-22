@@ -29,11 +29,15 @@ export type RatingEvent = {
   gameId: string;
   date: string;
   season: string;
+  session: number;
+  round: number;
   rank: Rank;
   points: number;
   ratingBefore: number;
   ratingAfter: number;
   delta: number;
+  isolatedDelta: number;
+  isolatedAfter: number;
   opponents: string[];
 };
 

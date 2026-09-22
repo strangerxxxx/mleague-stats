@@ -7,8 +7,9 @@ import { SeasonTable } from "@/components/SeasonTable";
 import { StatGrid } from "@/components/StatGrid";
 import { TeamMark } from "@/components/TeamMark";
 import { getDataset } from "@/lib/mleague/dataset";
+import { matchNumberByGameId } from "@/lib/mleague/matchDay";
 import { findPlayer } from "@/lib/mleague/stats";
-import { formatDate, formatPoints, formatRating, formatSigned, pointsClass } from "@/lib/mleague/format";
+import { formatGameStamp, formatPoints, formatRating, formatSigned, pointsClass } from "@/lib/mleague/format";
 import { getTeamMeta } from "@/lib/mleague/teams";
 
 export const dynamicParams = true;
@@ -35,6 +36,7 @@ export default async function PlayerPage({ params }: PageProps<"/players/[slug]"
   const teamProfile = dataset.teams.find((item) => item.slug === player.teamSlug);
   const recent = [...player.history].reverse().slice(0, 12);
   const playerHref = new Map(dataset.players.map((item) => [item.name, item.slug]));
+  const matchNos = matchNumberByGameId(dataset.games);
 
   return (
     <main className="mx-auto w-full max-w-6xl px-5 py-10">
@@ -86,7 +88,7 @@ export default async function PlayerPage({ params }: PageProps<"/players/[slug]"
             <tbody>
               {recent.map((event) => (
                 <tr key={`${event.gameId}-${event.date}-${event.rank}`}>
-                  <td>{formatDate(event.date)}</td>
+                  <td>{formatGameStamp(event.date, matchNos.get(event.gameId) ?? event.round)}</td>
                   <td>{event.rank}着</td>
                   <td className={pointsClass(event.points)}>{formatPoints(event.points)}</td>
                   <td className={pointsClass(event.delta)}>{formatSigned(event.delta)}</td>

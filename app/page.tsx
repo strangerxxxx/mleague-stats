@@ -1,18 +1,18 @@
-import { getDataset } from "@/lib/mleague/dataset";
 import { RankingTable } from "@/components/RankingTable";
 import { SearchBox } from "@/components/SearchBox";
 import { SeasonSwitcher } from "@/components/SeasonSwitcher";
-import { seasonLabel } from "@/lib/mleague/teams";
-import { CAREER_SCOPE } from "@/lib/mleague/types";
+import { LatestMatchDay } from "@/components/LatestMatchDay";
+import { getDataset } from "@/lib/mleague/dataset";
+import { latestMatchDay } from "@/lib/mleague/matchDay";
 import { resolveRankingScope } from "@/lib/mleague/stats";
 
 export default async function Home({ searchParams }: PageProps<"/">) {
   const dataset = await getDataset();
   const params = await searchParams;
   const selected = resolveRankingScope(dataset, params.season);
-  const isCareer = selected === CAREER_SCOPE;
   const playerRows = dataset.playerRankings[selected] ?? [];
   const teamRows = dataset.teamRankings[selected] ?? [];
+  const recentDay = latestMatchDay(dataset, selected);
   const searchItems = [
     ...dataset.players.map((player) => ({
       href: `/players/${player.slug}`,
@@ -30,22 +30,22 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
   return (
     <main className="mx-auto w-full max-w-6xl px-5 py-10">
-      <section className="mb-10 grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-end">
-        <div>
-          <h1 className="mt-2 text-4xl font-bold tracking-tight sm:text-5xl">
-            {isCareer ? "通算レーティング" : seasonLabel(selected)}
-          </h1>
-        </div>
-        <SearchBox items={searchItems} />
-      </section>
+      {recentDay ? (
+        <LatestMatchDay day={recentDay} />
+      ) : (
+        <h1 className="mb-10 text-3xl font-bold tracking-tight sm:text-4xl">
+          Mリーグ レーティング
+        </h1>
+      )}
 
-      <div className="mb-10">
+      <section className="mb-10 space-y-4">
+        <SearchBox items={searchItems} />
         <SeasonSwitcher
           seasons={dataset.seasons.map((season) => season.id)}
           latestSeason={dataset.latestSeason}
           selected={selected}
         />
-      </div>
+      </section>
 
       <section id="players" className="mb-12">
         <div className="mb-4 flex items-end justify-between gap-4">
