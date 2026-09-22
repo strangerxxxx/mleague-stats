@@ -2,12 +2,6 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: M-League stats data pipeline (S3 cache + scheduled scrape)
 
-Parameters:
-  ScheduleExpression:
-    Type: String
-    Default: rate(3 hours)
-    Description: EventBridge schedule for incremental current-season updates
-
 Resources:
   DataBucket:
     Type: AWS::S3::Bucket
@@ -61,16 +55,70 @@ Resources:
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref DataBucket
-      Events:
-        Refresh:
-          Type: Schedule
-          Properties:
-            Schedule: !Ref ScheduleExpression
-            Description: Incremental current-season M-League scrape
-            Enabled: true
       Tags:
         ManagedBy: cursor
         CreatedBy: cursor
+
+  SchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: mleague-stats-scheduler
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeUpdateFunction
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt UpdateFunction.Arn
+      Tags:
+        - Key: ManagedBy
+          Value: cursor
+        - Key: CreatedBy
+          Value: cursor
+
+  UpdateFunctionSchedulerPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref UpdateFunction
+      Action: lambda:InvokeFunction
+      Principal: scheduler.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+
+  EveningRefreshSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: mleague-stats-refresh-2300
+      Description: 9-5月の月火木金 23:00 JST
+      FlexibleTimeWindow:
+        Mode: "OFF"
+      ScheduleExpression: cron(0 23 ? 1-5,9-12 MON,TUE,THU,FRI *)
+      ScheduleExpressionTimezone: Asia/Tokyo
+      State: ENABLED
+      Target:
+        Arn: !GetAtt UpdateFunction.Arn
+        RoleArn: !GetAtt SchedulerRole.Arn
+
+  AfterMidnightRefreshSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: mleague-stats-refresh-2400-2500
+      Description: 9-5月の月火木金 24:00/25:00 JST（火水金土 0:00と1:00）
+      FlexibleTimeWindow:
+        Mode: "OFF"
+      ScheduleExpression: cron(0 0,1 ? 1-5,9-12 TUE,WED,FRI,SAT *)
+      ScheduleExpressionTimezone: Asia/Tokyo
+      State: ENABLED
+      Target:
+        Arn: !GetAtt UpdateFunction.Arn
+        RoleArn: !GetAtt SchedulerRole.Arn
 
   AmplifyServiceRole:
     Type: AWS::IAM::Role
