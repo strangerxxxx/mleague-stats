@@ -14,7 +14,7 @@ function game(id: string, date: string, session: number, round: number): Game {
   };
 }
 
-test("numbers two tables on the same day as #1 and #2", () => {
+test("numbers 第1回戦 as #1 and 第2回戦 as #2", () => {
   const map = matchNumberByGameId([
     game("a", "2026-09-18", 4, 1),
     game("b", "2026-09-18", 4, 2),
@@ -23,20 +23,20 @@ test("numbers two tables on the same day as #1 and #2", () => {
   assert.equal(map.get("b"), 2);
 });
 
-test("numbers each table of a two-match day in play order", () => {
+test("repeats #1 and #2 for each 試合 on a two-match day", () => {
   const map = matchNumberByGameId([
-    game("a", "2025-09-25", 7, 1),
-    game("b", "2025-09-25", 7, 2),
-    game("c", "2025-09-25", 8, 1),
-    game("d", "2025-09-25", 8, 2),
+    game("a", "2026-09-21", 5, 1),
+    game("b", "2026-09-21", 5, 2),
+    game("c", "2026-09-21", 6, 1),
+    game("d", "2026-09-21", 6, 2),
   ]);
   assert.equal(map.get("a"), 1);
   assert.equal(map.get("b"), 2);
-  assert.equal(map.get("c"), 3);
-  assert.equal(map.get("d"), 4);
+  assert.equal(map.get("c"), 1);
+  assert.equal(map.get("d"), 2);
 });
 
-test("restarts numbering on each date", () => {
+test("uses 回戦 numbers on every date", () => {
   const map = matchNumberByGameId([
     game("a", "2026-09-14", 1, 1),
     game("b", "2026-09-14", 1, 2),
@@ -49,9 +49,9 @@ test("restarts numbering on each date", () => {
   assert.equal(map.get("d"), 2);
 });
 
-test("numbers tables even when session is unknown", () => {
+test("falls back to #1 when round is missing", () => {
   const map = matchNumberByGameId([
-    game("a", "2018-10-01", 0, 1),
+    game("a", "2018-10-01", 0, 0),
     game("b", "2018-10-01", 0, 2),
   ]);
   assert.equal(map.get("a"), 1);
