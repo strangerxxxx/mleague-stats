@@ -14,11 +14,11 @@ export function SeasonSwitcher({
   const past = [...seasons].filter((id) => id !== latestSeason).reverse();
   const items = [
     { id: latestSeason, label: "今シーズン", href: "/" },
-    { id: CAREER_SCOPE, label: "通算", href: "/?season=career" },
+    { id: CAREER_SCOPE, label: "通算", href: "/career" },
     ...past.map((id) => ({
       id,
       label: seasonLabel(id),
-      href: `/?season=${encodeURIComponent(id)}`,
+      href: `/seasons/${encodeURIComponent(id)}`,
     })),
   ];
 

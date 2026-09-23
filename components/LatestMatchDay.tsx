@@ -18,7 +18,7 @@ export function LatestMatchDay({ day }: { day: MatchDay }) {
         <p className="text-base text-[var(--muted)]">{formatDate(day.date)}</p>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
-        {day.matches.map((match) => {
+        {day.matches.map((match, index) => {
           const table = match.tables[0];
           if (!table) return null;
           return (
@@ -38,7 +38,12 @@ export function LatestMatchDay({ day }: { day: MatchDay }) {
                       >
                         {seat.rank}
                       </span>
-                      <Avatar src={seat.photo} name={seat.player} size={36} />
+                      <Avatar
+                        src={seat.photo}
+                        name={seat.player}
+                        size={36}
+                        priority={index < 2}
+                      />
                       <div className="min-w-0">
                         {seat.slug ? (
                           <Link

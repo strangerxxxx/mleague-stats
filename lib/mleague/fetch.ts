@@ -6,7 +6,8 @@ import {
   mergeGames,
   parseGamesHtml,
 } from "./parse";
-import { loadCachedGames, saveCachedGames } from "./store";
+import { loadCachedGames, saveCachedGames, saveComputedDataset } from "./store";
+import { buildDataset } from "./stats";
 import { currentSeasonId, seasonLabel } from "./teams";
 
 export type { CachedGames } from "./types";
@@ -101,6 +102,7 @@ export async function fetchAllGames(options?: {
   if (options?.persist !== false) {
     try {
       await saveCachedGames(cache);
+      await saveComputedDataset(buildDataset(cache));
     } catch (error) {
       console.warn("Could not persist games cache", error);
     }

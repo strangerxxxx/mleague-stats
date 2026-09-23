@@ -11,6 +11,7 @@ import { findTeam } from "@/lib/mleague/stats";
 import { formatPoints, formatRating, pointsClass } from "@/lib/mleague/format";
 
 export const dynamicParams = true;
+export const revalidate = 180;
 
 export async function generateMetadata({
   params,

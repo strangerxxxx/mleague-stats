@@ -4,10 +4,12 @@ export function Avatar({
   src,
   name,
   size = 40,
+  priority = false,
 }: {
   src?: string;
   name: string;
   size?: number;
+  priority?: boolean;
 }) {
   if (!src) {
     return (
@@ -26,6 +28,8 @@ export function Avatar({
       className="avatar"
       style={{ width: size, height: size }}
       unoptimized
+      priority={priority}
+      loading={priority ? undefined : "lazy"}
     />
   );
 }

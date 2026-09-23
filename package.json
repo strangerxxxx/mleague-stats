@@ -8,8 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "fetch-data": "tsx scripts/fetch-data.ts",
+    "compute-data": "tsx scripts/compute-data.ts",
     "build:lambda": "esbuild lambda/update-games.ts --bundle --platform=node --target=node22 --format=cjs --outfile=dist/lambda/index.js",
-    "test": "tsx --test lib/mleague/rating.test.ts lib/mleague/matchDay.test.ts"
+    "test": "tsx --test lib/mleague/rating.test.ts lib/mleague/matchDay.test.ts lib/mleague/site.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.901.0",

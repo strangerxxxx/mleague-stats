@@ -40,7 +40,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: mleague-stats-update
-      Description: Scrape M-League results and write games.json to S3
+      Description: Scrape M-League results and write precomputed ratings to S3
       Runtime: nodejs22.x
       Architectures:
         - arm64

@@ -6,7 +6,8 @@ import { Header } from "@/components/Header";
 const noto = Noto_Sans_JP({
   variable: "--font-noto",
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  weight: ["400", "700"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
     "Mリーグの試合結果から個人・チームの成績とレーティングを集計した非公式サイトです。",
 };
 
-export const revalidate = 3600;
+export const revalidate = 180;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

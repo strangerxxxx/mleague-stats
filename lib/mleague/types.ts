@@ -121,3 +121,23 @@ export type Dataset = {
   playerRankings: Record<string, RankingRow[]>;
   teamRankings: Record<string, RankingRow[]>;
 };
+
+export const SNAPSHOT_VERSION = 1;
+
+export type ComputedProfiles = {
+  version: typeof SNAPSHOT_VERSION;
+  fetchedAt: string;
+  source: string;
+  seasons: SeasonRef[];
+  latestSeason: string;
+  players: PlayerProfile[];
+  teams: TeamProfile[];
+};
+
+export type SiteSearchItem = {
+  href: string;
+  name: string;
+  kind: "player" | "team";
+  sub?: string;
+  image?: string;
+};

@@ -31,6 +31,7 @@ export function TeamMark({
       className="team-mark"
       style={{ width: size, height: size }}
       unoptimized
+      loading="lazy"
     />
   );
 }
