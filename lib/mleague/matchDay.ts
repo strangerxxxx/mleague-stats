@@ -13,6 +13,7 @@ export type MatchDaySeat = {
   color: string;
   points: number;
   delta: number;
+  ratingBefore?: number;
   ratingAfter: number;
 };
 
@@ -74,6 +75,10 @@ export function latestMatchDay(dataset: Dataset, seasonId: string): MatchDay | n
               const event = player?.history.find((item) => item.gameId === game.id);
               const isolated = seasonId !== CAREER_SCOPE;
               const meta = getTeamMeta(result.team);
+              const delta = isolated ? (event?.isolatedDelta ?? 0) : (event?.delta ?? 0);
+              const after = isolated
+                ? (event?.isolatedAfter ?? player?.rating ?? 1500)
+                : (event?.ratingAfter ?? player?.rating ?? 1500);
               return {
                 rank: result.rank,
                 player: result.player,
@@ -84,10 +89,11 @@ export function latestMatchDay(dataset: Dataset, seasonId: string): MatchDay | n
                 logo: result.teamLogo || player?.seasons.at(-1)?.logo || "",
                 color: meta?.color ?? "#888",
                 points: result.points,
-                delta: isolated ? (event?.isolatedDelta ?? 0) : (event?.delta ?? 0),
-                ratingAfter: isolated
-                  ? (event?.isolatedAfter ?? player?.rating ?? 1500)
-                  : (event?.ratingAfter ?? player?.rating ?? 1500),
+                delta,
+                ratingBefore: isolated
+                  ? (event?.isolatedAfter ?? after) - delta
+                  : (event?.ratingBefore ?? after - delta),
+                ratingAfter: after,
               };
             }),
         },

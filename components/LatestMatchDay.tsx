@@ -4,7 +4,6 @@ import {
   formatDate,
   formatPoints,
   formatRating,
-  formatSigned,
   pointsClass,
 } from "@/lib/mleague/format";
 import { Avatar } from "./Avatar";
@@ -73,11 +72,16 @@ export function LatestMatchDay({ day }: { day: MatchDay }) {
                       <div className={pointsClass(seat.points)}>
                         {formatPoints(seat.points)}
                       </div>
-                      <div className={pointsClass(seat.delta)}>
-                        {formatSigned(seat.delta)}
-                      </div>
-                      <div className="text-[var(--gold-2)]">
-                        {formatRating(seat.ratingAfter)}
+                      <div className="whitespace-nowrap text-xs sm:text-sm">
+                        <span className="text-[var(--gold-2)]/55">
+                          {formatRating(
+                            seat.ratingBefore ?? seat.ratingAfter - seat.delta,
+                          )}
+                        </span>
+                        <span className="text-[var(--gold-2)]/55"> → </span>
+                        <span className="text-[var(--gold-2)]">
+                          {formatRating(seat.ratingAfter)}
+                        </span>
                       </div>
                     </div>
                   </div>

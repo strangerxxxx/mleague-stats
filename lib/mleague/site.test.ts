@@ -59,4 +59,9 @@ test("precomputes rankings and latest match day without live scrape", () => {
   );
   assert.ok(snapshot.latestMatchDays[CAREER_SCOPE]);
   assert.ok(snapshot.searchItems.some((item) => item.name === "A" && item.kind === "player"));
+  const firstSeat = day.matches[0]?.tables[0]?.seats[0];
+  assert.ok(firstSeat);
+  assert.equal(firstSeat.player, "A");
+  assert.equal(firstSeat.ratingBefore, 1500);
+  assert.equal(firstSeat.ratingAfter, 1522.5);
 });
