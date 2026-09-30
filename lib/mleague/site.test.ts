@@ -64,4 +64,6 @@ test("precomputes rankings and latest match day without live scrape", () => {
   assert.equal(firstSeat.player, "A");
   assert.equal(firstSeat.ratingBefore, 1500);
   assert.equal(firstSeat.ratingAfter, 1522.5);
+  assert.equal(day.matches[0]?.tables[0]?.averageRatingBefore, 1500);
+  assert.equal(day.matches[1]?.tables[0]?.averageRatingBefore, 1500);
 });

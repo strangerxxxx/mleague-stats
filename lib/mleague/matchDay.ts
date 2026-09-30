@@ -21,6 +21,7 @@ export type MatchDayTable = {
   gameId: string;
   round: number;
   seats: MatchDaySeat[];
+  averageRatingBefore?: number;
 };
 
 export type MatchDayMatch = {
@@ -33,6 +34,28 @@ export type MatchDay = {
   season: string;
   matches: MatchDayMatch[];
 };
+
+export function tableAverageRating(
+  ratings: Array<number | null | undefined>,
+): number | null {
+  if (ratings.length === 0) return null;
+  let sum = 0;
+  for (const rating of ratings) {
+    if (typeof rating !== "number" || !Number.isFinite(rating)) return null;
+    sum += rating;
+  }
+  return sum / ratings.length;
+}
+
+export function prematchSeatRating(seat: MatchDaySeat): number {
+  return seat.ratingBefore ?? seat.ratingAfter - seat.delta;
+}
+
+export function prematchTableAverage(
+  table: Pick<MatchDayTable, "seats">,
+): number | null {
+  return tableAverageRating(table.seats.map(prematchSeatRating));
+}
 
 export function matchNumberByGameId(games: Game[]): Map<string, number> {
   const map = new Map<string, number>();
@@ -61,43 +84,47 @@ export function latestMatchDay(dataset: Dataset, seasonId: string): MatchDay | n
   return {
     date: latest,
     season: dayGames[0].season,
-    matches: dayGames.map((game) => ({
-      matchNo: matchNos.get(game.id) ?? 1,
-      tables: [
-        {
-          gameId: game.id,
-          round: game.round,
-          seats: game.results
-            .slice()
-            .sort((a, b) => a.rank - b.rank)
-            .map((result) => {
-              const player = players.get(result.player);
-              const event = player?.history.find((item) => item.gameId === game.id);
-              const isolated = seasonId !== CAREER_SCOPE;
-              const meta = getTeamMeta(result.team);
-              const delta = isolated ? (event?.isolatedDelta ?? 0) : (event?.delta ?? 0);
-              const after = isolated
-                ? (event?.isolatedAfter ?? player?.rating ?? 1500)
-                : (event?.ratingAfter ?? player?.rating ?? 1500);
-              return {
-                rank: result.rank,
-                player: result.player,
-                slug: player?.slug ?? "",
-                photo: result.photo || player?.photo || "",
-                team: result.team,
-                teamSlug: meta?.slug ?? teamSlug(result.team),
-                logo: result.teamLogo || player?.seasons.at(-1)?.logo || "",
-                color: meta?.color ?? "#888",
-                points: result.points,
-                delta,
-                ratingBefore: isolated
-                  ? (event?.isolatedAfter ?? after) - delta
-                  : (event?.ratingBefore ?? after - delta),
-                ratingAfter: after,
-              };
-            }),
-        },
-      ],
-    })),
+    matches: dayGames.map((game) => {
+      const seats = game.results
+        .slice()
+        .sort((a, b) => a.rank - b.rank)
+        .map((result) => {
+          const player = players.get(result.player);
+          const event = player?.history.find((item) => item.gameId === game.id);
+          const isolated = seasonId !== CAREER_SCOPE;
+          const meta = getTeamMeta(result.team);
+          const delta = isolated ? (event?.isolatedDelta ?? 0) : (event?.delta ?? 0);
+          const after = isolated
+            ? (event?.isolatedAfter ?? player?.rating ?? 1500)
+            : (event?.ratingAfter ?? player?.rating ?? 1500);
+          return {
+            rank: result.rank,
+            player: result.player,
+            slug: player?.slug ?? "",
+            photo: result.photo || player?.photo || "",
+            team: result.team,
+            teamSlug: meta?.slug ?? teamSlug(result.team),
+            logo: result.teamLogo || player?.seasons.at(-1)?.logo || "",
+            color: meta?.color ?? "#888",
+            points: result.points,
+            delta,
+            ratingBefore: isolated
+              ? (event?.isolatedAfter ?? after) - delta
+              : (event?.ratingBefore ?? after - delta),
+            ratingAfter: after,
+          };
+        });
+      const averageRatingBefore = prematchTableAverage({ seats });
+      const table = {
+        gameId: game.id,
+        round: game.round,
+        seats,
+        ...(averageRatingBefore == null ? {} : { averageRatingBefore }),
+      };
+      return {
+        matchNo: matchNos.get(game.id) ?? 1,
+        tables: [table],
+      };
+    }),
   };
 }
