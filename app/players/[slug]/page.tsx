@@ -9,6 +9,7 @@ import { TeamMark } from "@/components/TeamMark";
 import { getDataset } from "@/lib/mleague/dataset";
 import { findPlayer } from "@/lib/mleague/stats";
 import { formatGameStamp, formatPoints, formatRating, formatSigned, pointsClass } from "@/lib/mleague/format";
+import { tableAverageRating } from "@/lib/mleague/matchDay";
 import { getTeamMeta } from "@/lib/mleague/teams";
 
 export const dynamicParams = true;
@@ -36,6 +37,14 @@ export default async function PlayerPage({ params }: PageProps<"/players/[slug]"
   const teamProfile = dataset.teams.find((item) => item.slug === player.teamSlug);
   const recent = [...player.history].reverse().slice(0, 12);
   const playerHref = new Map(dataset.players.map((item) => [item.name, item.slug]));
+  const recentGameIds = new Set(recent.map((event) => event.gameId));
+  const ratingBeforeByGame = new Map<string, number>();
+  for (const profile of dataset.players) {
+    for (const event of profile.history) {
+      if (!recentGameIds.has(event.gameId)) continue;
+      ratingBeforeByGame.set(`${event.gameId}\0${profile.name}`, event.ratingBefore);
+    }
+  }
 
   return (
     <main className="mx-auto w-full max-w-6xl px-5 py-10">
@@ -81,39 +90,51 @@ export default async function PlayerPage({ params }: PageProps<"/players/[slug]"
                 <th>収支</th>
                 <th>R変動</th>
                 <th>対戦</th>
+                <th title="試合前の通算卓平均R">卓平均</th>
                 <th>R</th>
               </tr>
             </thead>
             <tbody>
-              {recent.map((event) => (
-                <tr key={`${event.gameId}-${event.date}-${event.rank}`}>
-                  <td>{formatGameStamp(event.date, event.round > 0 ? event.round : 1)}</td>
-                  <td>{event.rank}着</td>
-                  <td className={pointsClass(event.points)}>{formatPoints(event.points)}</td>
-                  <td className={pointsClass(event.delta)}>{formatSigned(event.delta)}</td>
-                  <td>
-                    {event.opponents.map((name, index) => {
-                      const slug = playerHref.get(name);
-                      return (
-                        <span key={`${event.gameId}-${name}`}>
-                          {index > 0 ? " / " : null}
-                          {slug ? (
-                            <Link
-                              href={`/players/${slug}`}
-                              className="underline decoration-[var(--line)] underline-offset-2 hover:text-[var(--gold)] hover:decoration-[var(--gold)]"
-                            >
-                              {name}
-                            </Link>
-                          ) : (
-                            name
-                          )}
-                        </span>
-                      );
-                    })}
-                  </td>
-                  <td className="font-mono text-[var(--gold-2)]">{formatRating(event.ratingAfter)}</td>
-                </tr>
-              ))}
+              {recent.map((event) => {
+                const tableAverage = tableAverageRating([
+                  event.ratingBefore,
+                  ...event.opponents.map((name) =>
+                    ratingBeforeByGame.get(`${event.gameId}\0${name}`),
+                  ),
+                ]);
+                return (
+                  <tr key={`${event.gameId}-${event.date}-${event.rank}`}>
+                    <td>{formatGameStamp(event.date, event.round > 0 ? event.round : 1)}</td>
+                    <td>{event.rank}着</td>
+                    <td className={pointsClass(event.points)}>{formatPoints(event.points)}</td>
+                    <td className={pointsClass(event.delta)}>{formatSigned(event.delta)}</td>
+                    <td>
+                      {event.opponents.map((name, index) => {
+                        const slug = playerHref.get(name);
+                        return (
+                          <span key={`${event.gameId}-${name}`}>
+                            {index > 0 ? " / " : null}
+                            {slug ? (
+                              <Link
+                                href={`/players/${slug}`}
+                                className="underline decoration-[var(--line)] underline-offset-2 hover:text-[var(--gold)] hover:decoration-[var(--gold)]"
+                              >
+                                {name}
+                              </Link>
+                            ) : (
+                              name
+                            )}
+                          </span>
+                        );
+                      })}
+                    </td>
+                    <td className="font-mono text-[var(--gold-2)]">
+                      {tableAverage == null ? "-" : formatRating(tableAverage)}
+                    </td>
+                    <td className="font-mono text-[var(--gold-2)]">{formatRating(event.ratingAfter)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
