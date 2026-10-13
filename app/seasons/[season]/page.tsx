@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { HomePage } from "@/components/HomePage";
 import { getSiteSnapshot } from "@/lib/mleague/dataset";
 
-export const revalidate = 180;
+export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 
 export async function generateStaticParams() {

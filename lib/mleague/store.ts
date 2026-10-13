@@ -98,7 +98,7 @@ async function loadFromUrl<T>(name: JsonName): Promise<T | null> {
   if (cached && Date.now() < cached.expiresAt) {
     return cached.data as T;
   }
-  const response = await fetch(url, fetchInit(DATA_REVALIDATE_SECONDS));
+  const response = await fetch(url, fetchInit());
   if (response.status === 404) return null;
   if (!response.ok) {
     throw new Error(`Failed to load ${name} from ${url}: ${response.status}`);
@@ -186,10 +186,12 @@ function isMissingKey(error: unknown): boolean {
   );
 }
 
-function fetchInit(revalidateSeconds: number): RequestInit {
-  const headers = { Accept: "application/json" };
-  if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
-    return { headers, cache: "no-store" };
-  }
-  return { headers, next: { revalidate: revalidateSeconds } } as RequestInit;
+function fetchInit(): RequestInit {
+  // Amplify does not persist the Next.js data cache, so `next: { revalidate }`
+  // kept serving the snapshot baked in at build time. Read the current object
+  // on each miss; urlMemory still limits this process to one fetch per TTL.
+  return {
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  };
 }

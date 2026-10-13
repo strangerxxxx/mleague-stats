@@ -1,7 +1,7 @@
 import { HomePage } from "@/components/HomePage";
 import { getSiteSnapshot } from "@/lib/mleague/dataset";
 
-export const revalidate = 180;
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const snapshot = await getSiteSnapshot();
