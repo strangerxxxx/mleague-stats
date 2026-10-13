@@ -12,8 +12,8 @@ import { formatGameStamp, formatPoints, formatRating, formatSigned, pointsClass 
 import { tableAverageRating } from "@/lib/mleague/matchDay";
 import { getTeamMeta } from "@/lib/mleague/teams";
 
+export const dynamic = "force-dynamic";
 export const dynamicParams = true;
-export const revalidate = 180;
 
 export async function generateMetadata({
   params,
