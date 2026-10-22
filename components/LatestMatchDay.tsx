@@ -1,5 +1,9 @@
 import Link from "next/link";
-import type { MatchDay } from "@/lib/mleague/matchDay";
+import {
+  prematchSeatRating,
+  prematchTableAverage,
+  type MatchDay,
+} from "@/lib/mleague/matchDay";
 import {
   formatDate,
   formatPoints,
@@ -20,6 +24,7 @@ export function LatestMatchDay({ day }: { day: MatchDay }) {
         {day.matches.map((match, index) => {
           const table = match.tables[0];
           if (!table) return null;
+          const average = prematchTableAverage(table);
           return (
             <div key={table.gameId}>
               <h3 className="mb-3 text-sm font-bold tracking-[0.12em] text-[var(--gold)]">
@@ -74,9 +79,7 @@ export function LatestMatchDay({ day }: { day: MatchDay }) {
                       </div>
                       <div className="whitespace-nowrap text-xs sm:text-sm">
                         <span className="text-[var(--gold-2)]/55">
-                          {formatRating(
-                            seat.ratingBefore ?? seat.ratingAfter - seat.delta,
-                          )}
+                          {formatRating(prematchSeatRating(seat))}
                         </span>
                         <span className="text-[var(--gold-2)]/55"> → </span>
                         <span className="text-[var(--gold-2)]">
@@ -86,6 +89,17 @@ export function LatestMatchDay({ day }: { day: MatchDay }) {
                     </div>
                   </div>
                 ))}
+                {average != null ? (
+                  <p className="flex items-center justify-between gap-3 border-t border-white/5 px-4 py-2.5">
+                    <span className="text-xs text-[var(--muted)]">
+                      <span className="tracking-[0.12em]">卓の平均R</span>
+                      <span className="ml-2">試合前</span>
+                    </span>
+                    <span className="font-mono text-sm text-[var(--gold-2)]">
+                      {formatRating(average)}
+                    </span>
+                  </p>
+                ) : null}
               </div>
             </div>
           );

@@ -24,8 +24,6 @@ export const metadata: Metadata = {
     "Mリーグの試合結果から個人・チームの成績とレーティングを集計した非公式サイトです。",
 };
 
-export const revalidate = 180;
-
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
