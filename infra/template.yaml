@@ -98,22 +98,9 @@ Resources:
       Principal: scheduler.amazonaws.com
       SourceAccount: !Ref AWS::AccountId
 
-  RefreshScheduleGroup:
-    Type: AWS::Scheduler::ScheduleGroup
-    Properties:
-      Name: mleague-stats
-      Tags:
-        - Key: Name
-          Value: mleague-stats
-        - Key: ManagedBy
-          Value: cursor
-        - Key: CreatedBy
-          Value: cursor
-
   EveningRefreshSchedule:
     Type: AWS::Scheduler::Schedule
     Properties:
-      GroupName: !Ref RefreshScheduleGroup
       Name: mleague-stats-refresh-2300
       Description: 9-5月の月火木金 23:00 JST
       FlexibleTimeWindow:
@@ -128,7 +115,6 @@ Resources:
   AfterMidnightRefreshSchedule:
     Type: AWS::Scheduler::Schedule
     Properties:
-      GroupName: !Ref RefreshScheduleGroup
       Name: mleague-stats-refresh-2400-2500
       Description: 9-5月の月火木金 24:00/25:00 JST（火水金土 0:00と1:00）
       FlexibleTimeWindow:
