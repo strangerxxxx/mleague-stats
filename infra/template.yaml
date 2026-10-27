@@ -18,6 +18,8 @@ Resources:
       VersioningConfiguration:
         Status: Enabled
       Tags:
+        - Key: Name
+          Value: mleague-stats
         - Key: ManagedBy
           Value: cursor
         - Key: CreatedBy
@@ -55,7 +57,9 @@ Resources:
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref DataBucket
+      PropagateTags: true
       Tags:
+        Name: mleague-stats
         ManagedBy: cursor
         CreatedBy: cursor
 
@@ -79,6 +83,8 @@ Resources:
                 Action: lambda:InvokeFunction
                 Resource: !GetAtt UpdateFunction.Arn
       Tags:
+        - Key: Name
+          Value: mleague-stats
         - Key: ManagedBy
           Value: cursor
         - Key: CreatedBy
@@ -134,6 +140,8 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess-Amplify
       Tags:
+        - Key: Name
+          Value: mleague-stats
         - Key: ManagedBy
           Value: cursor
         - Key: CreatedBy
