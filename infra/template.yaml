@@ -18,6 +18,8 @@ Resources:
       VersioningConfiguration:
         Status: Enabled
       Tags:
+        - Key: Name
+          Value: mleague-stats
         - Key: ManagedBy
           Value: cursor
         - Key: CreatedBy
@@ -55,7 +57,9 @@ Resources:
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref DataBucket
+      PropagateTags: true
       Tags:
+        Name: mleague-stats
         ManagedBy: cursor
         CreatedBy: cursor
 
@@ -79,6 +83,8 @@ Resources:
                 Action: lambda:InvokeFunction
                 Resource: !GetAtt UpdateFunction.Arn
       Tags:
+        - Key: Name
+          Value: mleague-stats
         - Key: ManagedBy
           Value: cursor
         - Key: CreatedBy
@@ -92,9 +98,22 @@ Resources:
       Principal: scheduler.amazonaws.com
       SourceAccount: !Ref AWS::AccountId
 
+  RefreshScheduleGroup:
+    Type: AWS::Scheduler::ScheduleGroup
+    Properties:
+      Name: mleague-stats
+      Tags:
+        - Key: Name
+          Value: mleague-stats
+        - Key: ManagedBy
+          Value: cursor
+        - Key: CreatedBy
+          Value: cursor
+
   EveningRefreshSchedule:
     Type: AWS::Scheduler::Schedule
     Properties:
+      GroupName: !Ref RefreshScheduleGroup
       Name: mleague-stats-refresh-2300
       Description: 9-5月の月火木金 23:00 JST
       FlexibleTimeWindow:
@@ -109,6 +128,7 @@ Resources:
   AfterMidnightRefreshSchedule:
     Type: AWS::Scheduler::Schedule
     Properties:
+      GroupName: !Ref RefreshScheduleGroup
       Name: mleague-stats-refresh-2400-2500
       Description: 9-5月の月火木金 24:00/25:00 JST（火水金土 0:00と1:00）
       FlexibleTimeWindow:
@@ -134,6 +154,8 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess-Amplify
       Tags:
+        - Key: Name
+          Value: mleague-stats
         - Key: ManagedBy
           Value: cursor
         - Key: CreatedBy
