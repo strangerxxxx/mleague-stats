@@ -1,0 +1,21 @@
+customHeaders:
+  - pattern: "/"
+    headers:
+      - key: Cache-Control
+        value: "public, max-age=0, s-maxage=180, stale-while-revalidate=600"
+  - pattern: "/career"
+    headers:
+      - key: Cache-Control
+        value: "public, max-age=0, s-maxage=180, stale-while-revalidate=600"
+  - pattern: "/players/*"
+    headers:
+      - key: Cache-Control
+        value: "public, max-age=0, s-maxage=180, stale-while-revalidate=600"
+  - pattern: "/teams/*"
+    headers:
+      - key: Cache-Control
+        value: "public, max-age=0, s-maxage=180, stale-while-revalidate=600"
+  - pattern: "/seasons/*"
+    headers:
+      - key: Cache-Control
+        value: "public, max-age=0, s-maxage=180, stale-while-revalidate=600"
