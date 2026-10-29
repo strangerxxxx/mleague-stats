@@ -46,7 +46,7 @@ export function LatestMatchDay({ day }: { day: MatchDay }) {
                         src={seat.photo}
                         name={seat.player}
                         size={36}
-                        priority={index < 2}
+                        priority={index === 0}
                       />
                       <div className="min-w-0">
                         {seat.slug ? (
