@@ -68,8 +68,12 @@ function isComputedProfiles(value: unknown): value is ComputedProfiles {
 async function loadJson<T>(name: JsonName): Promise<T | null> {
   const fromS3 = await loadFromS3<T>(name);
   if (fromS3) return fromS3;
-  const fromUrl = await loadFromUrl<T>(name);
-  if (fromUrl) return fromUrl;
+  try {
+    const fromUrl = await loadFromUrl<T>(name);
+    if (fromUrl) return fromUrl;
+  } catch (error) {
+    console.warn(`Could not load ${name} from URL`, error);
+  }
   return loadFromFile<T>(name);
 }
 
@@ -103,7 +107,9 @@ async function loadFromUrl<T>(name: JsonName): Promise<T | null> {
   if (!response.ok) {
     throw new Error(`Failed to load ${name} from ${url}: ${response.status}`);
   }
-  const data = (await response.json()) as T;
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (bytes.length === 0) return null;
+  const data = parseJsonBody<T>(bytes, response.headers.get("content-encoding") ?? undefined);
   urlMemory.set(url, { expiresAt: Date.now() + MEMORY_TTL_MS, data });
   return data;
 }
@@ -147,9 +153,8 @@ async function saveToS3(name: JsonName, data: unknown): Promise<void> {
   );
 }
 
-function parseJsonBody<T>(buf: Buffer, encoding?: string): T {
-  const gzipped =
-    encoding === "gzip" || (buf.length >= 2 && buf[0] === 0x1f && buf[1] === 0x8b);
+function parseJsonBody<T>(buf: Buffer, _encoding?: string): T {
+  const gzipped = buf.length >= 2 && buf[0] === 0x1f && buf[1] === 0x8b;
   const raw = gzipped ? gunzipSync(buf).toString("utf8") : buf.toString("utf8");
   return JSON.parse(raw) as T;
 }
@@ -163,9 +168,11 @@ function objectKey(name: JsonName): string {
   return `data/${name}`;
 }
 
+const PUBLIC_GAMES_DATA_URL =
+  "https://mleague-stats-data-471112833056.s3.ap-northeast-1.amazonaws.com/data/games.json";
+
 function dataUrl(name: JsonName): string | null {
-  const gamesUrl = process.env.GAMES_DATA_URL;
-  if (!gamesUrl) return null;
+  const gamesUrl = process.env.GAMES_DATA_URL || PUBLIC_GAMES_DATA_URL;
   if (name === "games.json") return gamesUrl;
   if (gamesUrl.includes("games.json")) {
     return gamesUrl.replace(/games\.json(?:\?.*)?$/, name);

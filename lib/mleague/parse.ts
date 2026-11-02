@@ -17,7 +17,7 @@ export function discoverSeasons(gamesIndexHtml: string): SeasonRef[] {
 
   $('a[href*="-season"]').each((_, el) => {
     const href = $(el).attr("href") ?? "";
-    const match = href.match(/\/games\/(\d{4})-season\/?/);
+    const match = href.match(/\/(?:games\/)?(\d{4})-season\/?/);
     if (!match) return;
     const startYear = Number(match[1]);
     const id = seasonIdFromStartYear(startYear);
@@ -47,6 +47,28 @@ export function discoverSeasons(gamesIndexHtml: string): SeasonRef[] {
   }
 
   return [...found.values()].sort((a, b) => a.id.localeCompare(b.id));
+}
+
+export function mergeDiscoveredSeasons(
+  discovered: SeasonRef[],
+  existing: { seasons?: SeasonRef[]; games?: { season: string }[] } | null,
+): SeasonRef[] {
+  const byId = new Map(discovered.map((season) => [season.id, season]));
+  for (const season of existing?.seasons ?? []) {
+    if (!byId.has(season.id)) {
+      byId.set(season.id, { ...season, historical: true });
+    }
+  }
+  for (const game of existing?.games ?? []) {
+    if (byId.has(game.season)) continue;
+    byId.set(game.season, {
+      id: game.season,
+      label: seasonLabel(game.season),
+      url: `${SITE}/games/`,
+      historical: true,
+    });
+  }
+  return [...byId.values()].sort((a, b) => a.id.localeCompare(b.id));
 }
 
 export function currentSeasonMonthUrls(html: string, seasonId: string): string[] {

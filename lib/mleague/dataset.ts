@@ -45,7 +45,10 @@ function profilesToDataset(profiles: ComputedProfiles): Dataset {
 }
 
 async function loadGames(): Promise<CachedGames> {
-  const remote = process.env.GAMES_DATA_URL || process.env.GAMES_S3_BUCKET;
+  const remote =
+    process.env.GAMES_DATA_URL ||
+    process.env.GAMES_S3_BUCKET ||
+    process.env.NODE_ENV === "production";
   if (remote) {
     const cached = await loadCachedGames();
     if (!cached) {

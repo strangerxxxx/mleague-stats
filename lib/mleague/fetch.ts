@@ -3,6 +3,7 @@ import {
   currentSeasonMonthUrls,
   currentSeasonRefreshUrls,
   discoverSeasons,
+  mergeDiscoveredSeasons,
   mergeGames,
   parseGamesHtml,
 } from "./parse";
@@ -29,6 +30,11 @@ export async function fetchHtml(url: string, revalidateSeconds = 3600): Promise<
   if (!response.ok) {
     throw new Error(`Failed to fetch ${url}: ${response.status}`);
   }
+  const requestedPath = new URL(url).pathname;
+  const finalPath = new URL(response.url).pathname;
+  if (requestedPath !== "/" && finalPath === "/") {
+    throw new Error(`Lost games page redirect ${url} -> ${response.url}`);
+  }
   return response.text();
 }
 
@@ -46,8 +52,19 @@ export async function fetchAllGames(options?: {
   ) {
     return existing;
   }
-  const indexHtml = await fetchHtml(GAMES_INDEX, 1800);
-  const seasons = ensureCurrentSeason(discoverSeasons(indexHtml));
+  let indexHtml = "";
+  try {
+    indexHtml = await fetchHtml(GAMES_INDEX, 1800);
+  } catch (error) {
+    if (existing) {
+      console.warn("Games index unavailable, keeping cache", error);
+      return existing;
+    }
+    throw error;
+  }
+  const seasons = ensureCurrentSeason(
+    mergeDiscoveredSeasons(discoverSeasons(indexHtml), existing),
+  );
   const latest = seasons.at(-1)?.id ?? currentSeasonId();
 
   const htmlGroups: Game[][] = [];
@@ -60,9 +77,19 @@ export async function fetchAllGames(options?: {
     }
 
     if (season.historical) {
-      console.info(`Fetching ${season.id} from ${season.url}`);
-      const html = await fetchHtml(season.url, 60 * 60 * 24 * 7);
-      htmlGroups.push(parseGamesHtml(html, season.id));
+      try {
+        console.info(`Fetching ${season.id} from ${season.url}`);
+        const html = await fetchHtml(season.url, 60 * 60 * 24 * 7);
+        htmlGroups.push(parseGamesHtml(html, season.id));
+      } catch (error) {
+        const cached = cachedBySeason.get(season.id);
+        if (cached) {
+          console.warn(`Keeping cached ${season.id}; fetch failed`, error);
+          htmlGroups.push(cached);
+        } else {
+          console.warn(`Skipping ${season.id}; fetch failed`, error);
+        }
+      }
       continue;
     }
 
@@ -99,6 +126,12 @@ export async function fetchAllGames(options?: {
     ),
     games,
   };
+  if (existing && cache.games.length < Math.max(50, Math.floor(existing.games.length * 0.5))) {
+    console.warn(
+      `Skipping persist; games collapsed from ${existing.games.length} to ${cache.games.length}`,
+    );
+    return existing;
+  }
   if (options?.persist !== false) {
     try {
       await saveCachedGames(cache);
