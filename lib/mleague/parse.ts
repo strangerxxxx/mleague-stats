@@ -96,6 +96,65 @@ export function currentSeasonMonthUrls(html: string, seasonId: string): string[]
   return [...urls];
 }
 
+type OfficialGamePlayer = {
+  name?: string;
+  team?: string;
+  teamImage?: string;
+  image?: string;
+  point?: number;
+  rank?: number;
+};
+
+type OfficialGame = {
+  date?: string;
+  no?: number;
+  desk?: number;
+  complete?: boolean;
+  players?: OfficialGamePlayer[];
+};
+
+export type OfficialGamesPayload = {
+  games?: OfficialGame[];
+};
+
+export function parseOfficialGamesApi(payload: OfficialGamesPayload, season: string): Game[] {
+  const games: Game[] = [];
+  for (const item of payload.games ?? []) {
+    if (!item.complete) continue;
+    const date = tokyoDate(item.date ?? "");
+    const round = Number(item.no);
+    if (!date || !Number.isInteger(round) || round < 1) continue;
+    const session = Number.isInteger(Number(item.desk)) ? Number(item.desk) : 0;
+    const results: GameResult[] = [];
+    for (const player of item.players ?? []) {
+      const name = (player.name ?? "").replace(/\s+/g, "").trim();
+      const rank = Number(player.rank) as Rank;
+      const points = Number(player.point);
+      if (!name || PLACEHOLDER.test(name) || !Number.isFinite(points) || ![1, 2, 3, 4].includes(rank)) {
+        continue;
+      }
+      results.push({
+        rank,
+        player: name,
+        team: displayTeamName(player.team ?? ""),
+        points,
+        photo: absoluteUrl(player.image ?? ""),
+        teamLogo: absoluteUrl(player.teamImage ?? ""),
+      });
+    }
+    if (results.length !== 4) continue;
+    games.push({
+      id: `${date.replaceAll("-", "")}-${session}-${round}`,
+      season,
+      date,
+      session,
+      round,
+      results,
+    });
+  }
+  return fillMissingTeams(games);
+}
+
 export function currentSeasonRefreshUrls(now = new Date()): string[] {
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
@@ -201,6 +260,13 @@ function parseModalKey(id: string): { date: string; session: number } | null {
 
 function toIsoDate(yyyymmdd: string): string {
   return `${yyyymmdd.slice(0, 4)}-${yyyymmdd.slice(4, 6)}-${yyyymmdd.slice(6, 8)}`;
+}
+
+function tokyoDate(value: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const ms = Date.parse(value);
+  if (!Number.isFinite(ms)) return "";
+  return new Date(ms + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
 function absoluteUrl(src: string): string {

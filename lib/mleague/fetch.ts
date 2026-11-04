@@ -6,6 +6,7 @@ import {
   mergeDiscoveredSeasons,
   mergeGames,
   parseGamesHtml,
+  parseOfficialGamesApi,
 } from "./parse";
 import { loadCachedGames, saveCachedGames, saveComputedDataset } from "./store";
 import { buildDataset } from "./stats";
@@ -15,6 +16,7 @@ export type { CachedGames } from "./types";
 export { loadCachedGames, saveCachedGames } from "./store";
 
 const GAMES_INDEX = "https://m-league.jp/games/";
+const GAMES_API = "https://m-league.jp/api/mleague/data?kind=games";
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
@@ -38,6 +40,21 @@ export async function fetchHtml(url: string, revalidateSeconds = 3600): Promise<
   return response.text();
 }
 
+export async function fetchJson<T>(url: string, revalidateSeconds = 1800): Promise<T> {
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent": USER_AGENT,
+      Accept: "application/json",
+      "Accept-Language": "ja,en;q=0.8",
+    },
+    ...fetchCache(revalidateSeconds),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url}: ${response.status}`);
+  }
+  return (await response.json()) as T;
+}
+
 export async function fetchAllGames(options?: {
   refreshAll?: boolean;
   persist?: boolean;
@@ -56,11 +73,20 @@ export async function fetchAllGames(options?: {
   try {
     indexHtml = await fetchHtml(GAMES_INDEX, 1800);
   } catch (error) {
+    console.warn("Games index unavailable", error);
+  }
+  let apiGames: Game[] = [];
+  try {
+    apiGames = parseOfficialGamesApi(await fetchJson(GAMES_API, 1800), currentSeasonId());
+  } catch (error) {
+    console.warn("Official games API unavailable", error);
+  }
+  if (!indexHtml && apiGames.length === 0) {
     if (existing) {
-      console.warn("Games index unavailable, keeping cache", error);
+      console.warn("Keeping cache; official games sources are unavailable");
       return existing;
     }
-    throw error;
+    throw new Error("Official games sources are unavailable");
   }
   const seasons = ensureCurrentSeason(
     mergeDiscoveredSeasons(discoverSeasons(indexHtml), existing),
@@ -90,6 +116,12 @@ export async function fetchAllGames(options?: {
           console.warn(`Skipping ${season.id}; fetch failed`, error);
         }
       }
+      continue;
+    }
+
+    if (apiGames.length > 0) {
+      console.info(`Fetching ${season.id} from official games API (${apiGames.length} complete)`);
+      htmlGroups.push(apiGames);
       continue;
     }
 
