@@ -39,10 +39,20 @@ export function roundTo(value: number, digits = 1): number {
   return Math.round(value * factor) / factor;
 }
 
+const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"] as const;
+
 export function formatDate(iso: string): string {
   const [year, month, day] = iso.split("-");
   if (!year || !month || !day) return iso;
   return `${year}/${Number(month)}/${Number(day)}`;
+}
+
+export function formatDateWithWeekday(iso: string): string {
+  const formatted = formatDate(iso);
+  const [year, month, day] = iso.split("-").map(Number);
+  if (!year || !month || !day) return formatted;
+  const weekday = WEEKDAYS[new Date(Date.UTC(year, month - 1, day)).getUTCDay()];
+  return `${formatted} (${weekday})`;
 }
 
 export function formatGameStamp(iso: string, matchNo: number): string {

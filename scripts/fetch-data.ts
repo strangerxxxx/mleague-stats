@@ -9,6 +9,7 @@ async function main() {
       {
         fetchedAt: cache.fetchedAt,
         games: cache.games.length,
+        upcoming: cache.upcomingCards?.length ?? 0,
         seasons,
       },
       null,

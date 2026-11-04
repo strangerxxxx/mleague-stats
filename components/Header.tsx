@@ -12,6 +12,9 @@ export function Header() {
           <Link className="hover:text-[var(--gold)]" href="/#recent">
             直近
           </Link>
+          <Link className="hover:text-[var(--gold)]" href="/#upcoming">
+            次回
+          </Link>
           <Link className="hover:text-[var(--gold)]" href="/#players">
             個人
           </Link>

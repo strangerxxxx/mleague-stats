@@ -1,4 +1,5 @@
 import { latestMatchDay, type MatchDay } from "./matchDay";
+import { nextUpcomingMatchDay, type UpcomingMatchDay } from "./upcoming";
 import {
   CAREER_SCOPE,
   SNAPSHOT_VERSION,
@@ -16,9 +17,10 @@ export type SiteSnapshot = {
   teamRankings: Dataset["teamRankings"];
   searchItems: SiteSearchItem[];
   latestMatchDays: Record<string, MatchDay | null>;
+  upcomingMatchDay: UpcomingMatchDay | null;
 };
 
-export function buildSiteSnapshot(dataset: Dataset): SiteSnapshot {
+export function buildSiteSnapshot(dataset: Dataset, now = new Date()): SiteSnapshot {
   const seasonIds = new Set<string>([
     CAREER_SCOPE,
     dataset.latestSeason,
@@ -53,6 +55,11 @@ export function buildSiteSnapshot(dataset: Dataset): SiteSnapshot {
       })),
     ],
     latestMatchDays,
+    upcomingMatchDay: nextUpcomingMatchDay(
+      dataset.upcomingCards ?? [],
+      dataset.teamRankings[dataset.latestSeason] ?? [],
+      now,
+    ),
   };
 }
 

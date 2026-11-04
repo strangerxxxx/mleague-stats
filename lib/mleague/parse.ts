@@ -3,10 +3,13 @@ import type { Game, GameResult, Rank, SeasonRef } from "./types";
 import {
   currentSeasonId,
   displayTeamName,
+  getTeamMeta,
   seasonIdFromStartYear,
   seasonLabel,
   teamFromLogoSrc,
+  teamSlug,
 } from "./teams";
+import type { MatchCard, MatchCardTeam } from "./types";
 
 const SITE = "https://m-league.jp";
 const PLACEHOLDER = /選手|得点pt|^$/;
@@ -97,12 +100,12 @@ export function currentSeasonMonthUrls(html: string, seasonId: string): string[]
 }
 
 type OfficialGamePlayer = {
-  name?: string;
-  team?: string;
-  teamImage?: string;
-  image?: string;
-  point?: number;
-  rank?: number;
+  name?: string | null;
+  team?: string | null;
+  teamImage?: string | null;
+  image?: string | null;
+  point?: number | null;
+  rank?: number | null;
 };
 
 type OfficialGame = {
@@ -153,6 +156,41 @@ export function parseOfficialGamesApi(payload: OfficialGamesPayload, season: str
     });
   }
   return fillMissingTeams(games);
+}
+
+export function parseOfficialMatchCards(
+  payload: OfficialGamesPayload,
+  season: string,
+): MatchCard[] {
+  const cards = new Map<string, MatchCard>();
+  for (const item of payload.games ?? []) {
+    if (item.complete) continue;
+    const date = tokyoDate(item.date ?? "");
+    if (!date) continue;
+    const desk = Number.isInteger(Number(item.desk)) ? Number(item.desk) : 0;
+    const teams: MatchCardTeam[] = [];
+    const seen = new Set<string>();
+    for (const player of item.players ?? []) {
+      const name = displayTeamName((player.team ?? "").trim());
+      if (!name || seen.has(name)) continue;
+      seen.add(name);
+      const meta = getTeamMeta(name);
+      teams.push({
+        name,
+        slug: meta?.slug ?? teamSlug(name),
+        logo: absoluteUrl(player.teamImage ?? ""),
+      });
+    }
+    if (teams.length !== 4) continue;
+    const id = `${date.replaceAll("-", "")}-${desk}`;
+    if (!cards.has(id)) {
+      cards.set(id, { id, date, season, desk, teams });
+    }
+  }
+  return [...cards.values()].sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return a.desk - b.desk;
+  });
 }
 
 export function currentSeasonRefreshUrls(now = new Date()): string[] {

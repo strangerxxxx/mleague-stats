@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
         hostname: "m-league.jp",
         pathname: "/wp/wp-content/uploads/**",
       },
+      {
+        protocol: "https",
+        hostname: "m-league.jp",
+        pathname: "/assets/**",
+      },
     ],
   },
 };

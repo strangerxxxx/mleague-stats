@@ -373,6 +373,7 @@ export function buildDataset(cache: CachedGames): Dataset {
     teams: teamProfiles,
     playerRankings,
     teamRankings,
+    upcomingCards: cache.upcomingCards ?? [],
   };
 }
 

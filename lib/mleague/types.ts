@@ -103,11 +103,26 @@ export type RankingRow = {
 
 export const CAREER_SCOPE = "career";
 
+export type MatchCardTeam = {
+  name: string;
+  slug: string;
+  logo: string;
+};
+
+export type MatchCard = {
+  id: string;
+  date: string;
+  season: string;
+  desk: number;
+  teams: MatchCardTeam[];
+};
+
 export type CachedGames = {
   fetchedAt: string;
   source: string;
   seasons: SeasonRef[];
   games: Game[];
+  upcomingCards?: MatchCard[];
 };
 
 export type Dataset = {
@@ -120,6 +135,7 @@ export type Dataset = {
   teams: TeamProfile[];
   playerRankings: Record<string, RankingRow[]>;
   teamRankings: Record<string, RankingRow[]>;
+  upcomingCards?: MatchCard[];
 };
 
 export const SNAPSHOT_VERSION = 1;

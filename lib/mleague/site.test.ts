@@ -44,8 +44,25 @@ test("precomputes rankings and latest match day without live scrape", () => {
       game("a", "2026-09-21", 1, ["A", "B", "C", "D"]),
       game("b", "2026-09-21", 2, ["B", "A", "D", "C"]),
     ],
+    upcomingCards: [
+      {
+        id: "20260922-0",
+        date: "2026-09-22",
+        season: "2025-26",
+        desk: 0,
+        teams: [
+          { name: "EARTH JETS", slug: "earth-jets", logo: "/jets.png" },
+          { name: "赤坂ドリブンズ", slug: "akasaka-drivens", logo: "" },
+          { name: "EX風林火山", slug: "ex-furinkazan", logo: "" },
+          { name: "KADOKAWAサクラナイツ", slug: "sakura-knights", logo: "" },
+        ],
+      },
+    ],
   };
-  const snapshot = buildSiteSnapshot(buildDataset(cache));
+  const snapshot = buildSiteSnapshot(
+    buildDataset(cache),
+    new Date("2026-09-22T00:00:00+09:00"),
+  );
   assert.equal(isSiteSnapshot(snapshot), true);
   assert.equal(snapshot.latestSeason, "2025-26");
   assert.ok(snapshot.playerRankings["2025-26"].length >= 4);
@@ -66,4 +83,7 @@ test("precomputes rankings and latest match day without live scrape", () => {
   assert.equal(firstSeat.ratingAfter, 1522.5);
   assert.equal(day.matches[0]?.tables[0]?.averageRatingBefore, 1500);
   assert.equal(day.matches[1]?.tables[0]?.averageRatingBefore, 1500);
+  assert.equal(snapshot.upcomingMatchDay?.date, "2026-09-22");
+  assert.equal(snapshot.upcomingMatchDay?.tables[0]?.label, "対戦カード");
+  assert.equal(snapshot.upcomingMatchDay?.tables[0]?.teams[0]?.slug, "earth-jets");
 });

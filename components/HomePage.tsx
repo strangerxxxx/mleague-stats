@@ -2,7 +2,9 @@ import { RankingTable } from "@/components/RankingTable";
 import { SearchBox } from "@/components/SearchBox";
 import { SeasonSwitcher } from "@/components/SeasonSwitcher";
 import { LatestMatchDay } from "@/components/LatestMatchDay";
+import { UpcomingMatchDay } from "@/components/UpcomingMatchDay";
 import type { SiteSnapshot } from "@/lib/mleague/site";
+import { CAREER_SCOPE } from "@/lib/mleague/types";
 
 export function HomePage({
   snapshot,
@@ -14,6 +16,10 @@ export function HomePage({
   const playerRows = snapshot.playerRankings[selected] ?? [];
   const teamRows = snapshot.teamRankings[selected] ?? [];
   const recentDay = snapshot.latestMatchDays[selected] ?? null;
+  const upcomingDay =
+    selected === snapshot.latestSeason || selected === CAREER_SCOPE
+      ? (snapshot.upcomingMatchDay ?? null)
+      : null;
 
   return (
     <main className="mx-auto w-full max-w-6xl px-5 py-10">
@@ -24,6 +30,8 @@ export function HomePage({
           Mリーグ レーティング
         </h1>
       )}
+
+      {upcomingDay ? <UpcomingMatchDay day={upcomingDay} /> : null}
 
       <section className="mb-10 space-y-4">
         <SearchBox items={snapshot.searchItems} />

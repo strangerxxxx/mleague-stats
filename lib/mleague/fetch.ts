@@ -1,4 +1,4 @@
-import type { CachedGames, Game, SeasonRef } from "./types";
+import type { CachedGames, Game, MatchCard, SeasonRef } from "./types";
 import {
   currentSeasonMonthUrls,
   currentSeasonRefreshUrls,
@@ -7,6 +7,8 @@ import {
   mergeGames,
   parseGamesHtml,
   parseOfficialGamesApi,
+  parseOfficialMatchCards,
+  type OfficialGamesPayload,
 } from "./parse";
 import { loadCachedGames, saveCachedGames, saveComputedDataset } from "./store";
 import { buildDataset } from "./stats";
@@ -75,13 +77,16 @@ export async function fetchAllGames(options?: {
   } catch (error) {
     console.warn("Games index unavailable", error);
   }
-  let apiGames: Game[] = [];
+  let apiPayload: OfficialGamesPayload | null = null;
   try {
-    apiGames = parseOfficialGamesApi(await fetchJson(GAMES_API, 1800), currentSeasonId());
+    apiPayload = await fetchJson<OfficialGamesPayload>(GAMES_API, 1800);
   } catch (error) {
     console.warn("Official games API unavailable", error);
   }
-  if (!indexHtml && apiGames.length === 0) {
+  const seasonId = currentSeasonId();
+  const apiGames = apiPayload ? parseOfficialGamesApi(apiPayload, seasonId) : [];
+  const apiCards = apiPayload ? parseOfficialMatchCards(apiPayload, seasonId) : [];
+  if (!indexHtml && !apiPayload) {
     if (existing) {
       console.warn("Keeping cache; official games sources are unavailable");
       return existing;
@@ -95,6 +100,7 @@ export async function fetchAllGames(options?: {
 
   const htmlGroups: Game[][] = [];
   const cachedBySeason = groupBySeason(existing?.games ?? []);
+  let upcomingCards: MatchCard[] = existing?.upcomingCards ?? [];
 
   for (const season of seasons) {
     if (season.historical && cachedBySeason.has(season.id) && !options?.refreshAll) {
@@ -119,9 +125,12 @@ export async function fetchAllGames(options?: {
       continue;
     }
 
-    if (apiGames.length > 0) {
-      console.info(`Fetching ${season.id} from official games API (${apiGames.length} complete)`);
+    if (apiPayload) {
+      console.info(
+        `Fetching ${season.id} from official games API (${apiGames.length} complete, ${apiCards.length} cards)`,
+      );
       htmlGroups.push(apiGames);
+      upcomingCards = apiCards;
       continue;
     }
 
@@ -157,6 +166,7 @@ export async function fetchAllGames(options?: {
       season.id === latest ? { ...season, historical: false } : season,
     ),
     games,
+    upcomingCards,
   };
   if (existing && cache.games.length < Math.max(50, Math.floor(existing.games.length * 0.5))) {
     console.warn(

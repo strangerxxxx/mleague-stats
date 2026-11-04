@@ -41,6 +41,7 @@ function profilesToDataset(profiles: ComputedProfiles): Dataset {
     teams: profiles.teams,
     playerRankings: {},
     teamRankings: {},
+    upcomingCards: [],
   };
 }
 
