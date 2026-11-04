@@ -5,7 +5,7 @@ import {
   type MatchDay,
 } from "@/lib/mleague/matchDay";
 import {
-  formatDate,
+  formatDateWithWeekday,
   formatPoints,
   formatRating,
   pointsClass,
@@ -18,7 +18,7 @@ export function LatestMatchDay({ day }: { day: MatchDay }) {
     <section id="recent" className="mb-12">
       <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">直近の試合</h1>
-        <p className="text-base text-[var(--muted)]">{formatDate(day.date)}</p>
+        <p className="text-base text-[var(--muted)]">{formatDateWithWeekday(day.date)}</p>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         {day.matches.map((match, index) => {
