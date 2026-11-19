@@ -10,6 +10,7 @@ import {
   parseOfficialMatchCards,
   type OfficialGamesPayload,
 } from "./parse";
+import { archiveMissingPhotos } from "./photos";
 import { loadCachedGames, saveCachedGames, saveComputedDataset } from "./store";
 import { buildDataset } from "./stats";
 import { currentSeasonId, seasonLabel } from "./teams";
@@ -153,11 +154,16 @@ export async function fetchAllGames(options?: {
     htmlGroups.push(incremental ? mergeGames([cachedCurrent, ...monthGames]) : mergeGames(monthGames));
   }
 
-  const games = mergeGames(htmlGroups).sort((a, b) => {
+  let games = mergeGames(htmlGroups).sort((a, b) => {
     if (a.date !== b.date) return a.date.localeCompare(b.date);
     if (a.session !== b.session) return a.session - b.session;
     return a.round - b.round;
   });
+  try {
+    games = await archiveMissingPhotos(games);
+  } catch (error) {
+    console.warn("Could not archive missing player photos", error);
+  }
 
   const cache: CachedGames = {
     fetchedAt: new Date().toISOString(),

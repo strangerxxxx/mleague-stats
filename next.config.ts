@@ -18,6 +18,16 @@ const nextConfig: NextConfig = {
         hostname: "m-league.jp",
         pathname: "/assets/**",
       },
+      {
+        protocol: "https",
+        hostname: "mleague-stats-data-471112833056.s3.ap-northeast-1.amazonaws.com",
+        pathname: "/data/photos/**",
+      },
+      {
+        protocol: "https",
+        hostname: "web.archive.org",
+        pathname: "/web/**",
+      },
     ],
   },
 };

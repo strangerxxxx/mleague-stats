@@ -40,6 +40,54 @@ export async function saveComputedDataset(dataset: Dataset): Promise<void> {
   await saveJson("dataset.json", toComputedProfiles(dataset));
 }
 
+export function publicPhotoUrl(filename: string): string {
+  const gamesUrl = process.env.GAMES_DATA_URL || PUBLIC_GAMES_DATA_URL;
+  if (gamesUrl.includes("games.json")) {
+    return gamesUrl.replace(/games\.json(?:\?.*)?$/, `photos/${filename}`);
+  }
+  return gamesUrl.replace(/\/?$/, `/photos/${filename}`);
+}
+
+export async function photoObjectExists(filename: string): Promise<boolean> {
+  const bucket = process.env.GAMES_S3_BUCKET;
+  if (!bucket) return false;
+  const { S3Client, HeadObjectCommand } = await import("@aws-sdk/client-s3");
+  const client = new S3Client({});
+  try {
+    await client.send(
+      new HeadObjectCommand({
+        Bucket: bucket,
+        Key: photoObjectKey(filename),
+      }),
+    );
+    return true;
+  } catch (error) {
+    if (isMissingKey(error)) return false;
+    throw error;
+  }
+}
+
+export async function savePhotoObject(
+  filename: string,
+  body: Buffer,
+  contentType: string,
+): Promise<string | null> {
+  const bucket = process.env.GAMES_S3_BUCKET;
+  if (!bucket) return null;
+  const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3");
+  const client = new S3Client({});
+  await client.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: photoObjectKey(filename),
+      Body: body,
+      ContentType: contentType || "image/png",
+      CacheControl: "public, max-age=31536000, immutable",
+    }),
+  );
+  return publicPhotoUrl(filename);
+}
+
 function toComputedProfiles(dataset: Dataset): ComputedProfiles {
   return {
     version: SNAPSHOT_VERSION,
@@ -157,6 +205,14 @@ function parseJsonBody<T>(buf: Buffer, _encoding?: string): T {
   const gzipped = buf.length >= 2 && buf[0] === 0x1f && buf[1] === 0x8b;
   const raw = gzipped ? gunzipSync(buf).toString("utf8") : buf.toString("utf8");
   return JSON.parse(raw) as T;
+}
+
+function photoObjectKey(filename: string): string {
+  const gamesKey = process.env.GAMES_S3_KEY || "data/games.json";
+  if (gamesKey.endsWith("games.json")) {
+    return `${gamesKey.slice(0, -"games.json".length)}photos/${filename}`;
+  }
+  return `data/photos/${filename}`;
 }
 
 function objectKey(name: JsonName): string {
