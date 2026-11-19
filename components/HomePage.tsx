@@ -67,6 +67,7 @@ export function HomePage({
         <p>(Rateの変動) = 0.5 × (対戦結果 + 補正値)</p>
         <ul className="mt-3 list-disc pl-5">
           <li>対戦結果: 1位 +45 / 2位 +5 / 3位 -15 / 4位 -35</li>
+          <li>同着の場合は、その着順が占める順位のポイントを均等に分ける（1位が2名なら +25）</li>
           <li>補正値: (卓の平均R - 自分のR) / 40</li>
         </ul>
       </section>

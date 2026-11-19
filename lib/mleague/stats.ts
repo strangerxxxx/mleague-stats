@@ -233,11 +233,18 @@ export function buildDataset(cache: CachedGames): Dataset {
       playerKeys.map((key) => [key, players.get(key)?.isolatedRating ?? INITIAL_RATING]),
     );
     const ranks = game.results.map((result) => result.rank);
-    const { deltas: playerDeltas } = applyGameRatings(playerRatings, playerKeys, ranks);
+    const points = game.results.map((result) => result.points);
+    const { deltas: playerDeltas } = applyGameRatings(
+      playerRatings,
+      playerKeys,
+      ranks,
+      points,
+    );
     const { deltas: isolatedPlayerDeltas } = applyGameRatings(
       isolatedPlayerRatings,
       playerKeys,
       ranks,
+      points,
     );
 
     playerKeys.forEach((key, index) => {
@@ -266,11 +273,17 @@ export function buildDataset(cache: CachedGames): Dataset {
       const isolatedTeamRatings = new Map(
         teamKeys.map((key) => [key, teams.get(key)?.isolatedRating ?? INITIAL_RATING]),
       );
-      const { deltas: teamDeltas } = applyGameRatings(teamRatings, teamKeys, ranks);
+      const { deltas: teamDeltas } = applyGameRatings(
+        teamRatings,
+        teamKeys,
+        ranks,
+        points,
+      );
       const { deltas: isolatedTeamDeltas } = applyGameRatings(
         isolatedTeamRatings,
         teamKeys,
         ranks,
+        points,
       );
       teamKeys.forEach((key, index) => {
         const result = game.results[index];
