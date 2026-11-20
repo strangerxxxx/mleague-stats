@@ -98,6 +98,23 @@ table.data tbody tr:hover {
   background: rgba(232, 197, 71, 0.05);
 }
 
+table.data.has-entrant th.col-entrant,
+table.data.has-entrant td.col-entrant {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #10131c;
+}
+
+table.data.has-entrant th.col-entrant {
+  background: #141824;
+}
+
+table.data.has-entrant tbody tr:hover td.col-entrant {
+  background: #1a1f2c;
+}
+
+
 .rank-pill {
   display: inline-flex;
   width: 1.8rem;

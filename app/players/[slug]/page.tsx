@@ -2,14 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
+import { GameHistoryTable } from "@/components/GameHistoryTable";
+import { JsonLd } from "@/components/JsonLd";
+import { Pager } from "@/components/Pager";
 import { RatingChart } from "@/components/RatingChart";
 import { SeasonTable } from "@/components/SeasonTable";
 import { StatGrid } from "@/components/StatGrid";
 import { TeamMark } from "@/components/TeamMark";
 import { getDataset } from "@/lib/mleague/dataset";
+import { gamesHref, newestFirst, paginate, parsePage, ratingBeforeByGame } from "@/lib/mleague/history";
+import { pageMetadata, playerJsonLd, playerSeoDescription } from "@/lib/mleague/seo";
 import { findPlayer } from "@/lib/mleague/stats";
-import { formatGameStamp, formatPoints, formatRating, formatSigned, pointsClass } from "@/lib/mleague/format";
-import { tableAverageRating } from "@/lib/mleague/matchDay";
 import { getTeamMeta } from "@/lib/mleague/teams";
 
 export const dynamic = "force-dynamic";
@@ -21,13 +24,23 @@ export async function generateMetadata({
   const { slug } = await params;
   const dataset = await getDataset();
   const player = findPlayer(dataset, slug);
-  return {
-    title: player ? `${player.name} のレーティング` : "選手",
-  };
+  if (!player) {
+    return { title: "選手" };
+  }
+  return pageMetadata({
+    title: `${player.name} のレーティング`,
+    description: playerSeoDescription(player),
+    path: `/players/${player.slug}`,
+    image: player.photo || undefined,
+  });
 }
 
-export default async function PlayerPage({ params }: PageProps<"/players/[slug]">) {
+export default async function PlayerPage({
+  params,
+  searchParams,
+}: PageProps<"/players/[slug]">) {
   const { slug } = await params;
+  const query = await searchParams;
   const dataset = await getDataset();
   const player = findPlayer(dataset, slug);
   if (!player) notFound();
@@ -35,19 +48,28 @@ export default async function PlayerPage({ params }: PageProps<"/players/[slug]"
   const latest = player.seasons.find((season) => season.season === dataset.latestSeason) ?? player.seasons.at(-1);
   const team = getTeamMeta(player.team);
   const teamProfile = dataset.teams.find((item) => item.slug === player.teamSlug);
-  const recent = [...player.history].reverse().slice(0, 12);
+  const page = paginate(newestFirst(player.history), parsePage(query.page));
   const playerHref = new Map(dataset.players.map((item) => [item.name, item.slug]));
-  const recentGameIds = new Set(recent.map((event) => event.gameId));
-  const ratingBeforeByGame = new Map<string, number>();
-  for (const profile of dataset.players) {
-    for (const event of profile.history) {
-      if (!recentGameIds.has(event.gameId)) continue;
-      ratingBeforeByGame.set(`${event.gameId}\0${profile.name}`, event.ratingBefore);
-    }
-  }
+  const ratings = ratingBeforeByGame(
+    dataset.players,
+    page.items.map((event) => event.gameId),
+  );
+  const basePath = `/players/${player.slug}`;
+
+  const description = playerSeoDescription(player);
 
   return (
     <main className="mx-auto w-full max-w-6xl px-5 py-10">
+      <JsonLd
+        data={playerJsonLd({
+          name: player.name,
+          slug: player.slug,
+          photo: player.photo,
+          team: player.team,
+          teamSlug: player.teamSlug,
+          description,
+        })}
+      />
       <Link href="/" className="text-sm text-[var(--muted)] hover:text-[var(--gold)]">
         ← ランキングへ戻る
       </Link>
@@ -79,65 +101,19 @@ export default async function PlayerPage({ params }: PageProps<"/players/[slug]"
         <SeasonTable seasons={player.seasons} career={player.career} />
       </section>
 
-      <section className="mt-10">
-        <h2 className="mb-3 text-xl font-bold">最近の試合</h2>
-        <div className="table-wrap">
-          <table className="data">
-            <thead>
-              <tr>
-                <th>日付</th>
-                <th>着順</th>
-                <th>収支</th>
-                <th>R変動</th>
-                <th>対戦</th>
-                <th title="試合前の通算卓平均R">卓平均</th>
-                <th>R</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recent.map((event) => {
-                const tableAverage = tableAverageRating([
-                  event.ratingBefore,
-                  ...event.opponents.map((name) =>
-                    ratingBeforeByGame.get(`${event.gameId}\0${name}`),
-                  ),
-                ]);
-                return (
-                  <tr key={`${event.gameId}-${event.date}-${event.rank}`}>
-                    <td>{formatGameStamp(event.date, event.round > 0 ? event.round : 1)}</td>
-                    <td>{event.rank}着</td>
-                    <td className={pointsClass(event.points)}>{formatPoints(event.points)}</td>
-                    <td className={pointsClass(event.delta)}>{formatSigned(event.delta)}</td>
-                    <td>
-                      {event.opponents.map((name, index) => {
-                        const slug = playerHref.get(name);
-                        return (
-                          <span key={`${event.gameId}-${name}`}>
-                            {index > 0 ? " / " : null}
-                            {slug ? (
-                              <Link
-                                href={`/players/${slug}`}
-                                className="underline decoration-[var(--line)] underline-offset-2 hover:text-[var(--gold)] hover:decoration-[var(--gold)]"
-                              >
-                                {name}
-                              </Link>
-                            ) : (
-                              name
-                            )}
-                          </span>
-                        );
-                      })}
-                    </td>
-                    <td className="font-mono text-[var(--gold-2)]">
-                      {tableAverage == null ? "-" : formatRating(tableAverage)}
-                    </td>
-                    <td className="font-mono text-[var(--gold-2)]">{formatRating(event.ratingAfter)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+      <section id="games" className="mt-10 scroll-mt-24">
+        <h2 className="mb-3 text-xl font-bold">対局結果</h2>
+        <GameHistoryTable
+          rows={page.items.map((event) => ({ event }))}
+          playerHref={playerHref}
+          ratingBeforeByGame={ratings}
+        />
+        <Pager
+          current={page.current}
+          pageCount={page.pageCount}
+          total={page.total}
+          hrefFor={(item) => gamesHref(basePath, item)}
+        />
       </section>
     </main>
   );

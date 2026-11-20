@@ -2,11 +2,25 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
+import { GameHistoryTable } from "@/components/GameHistoryTable";
+import { JsonLd } from "@/components/JsonLd";
+import { Pager } from "@/components/Pager";
 import { RatingChart } from "@/components/RatingChart";
 import { SeasonTable } from "@/components/SeasonTable";
 import { StatGrid } from "@/components/StatGrid";
 import { TeamMark } from "@/components/TeamMark";
 import { getDataset } from "@/lib/mleague/dataset";
+import {
+  eventForGame,
+  gamesHref,
+  memberForTeamEvent,
+  newestFirst,
+  paginate,
+  parsePage,
+  playersByGameId,
+  ratingBeforeByGame,
+} from "@/lib/mleague/history";
+import { pageMetadata, teamJsonLd, teamSeoDescription } from "@/lib/mleague/seo";
 import { findTeam } from "@/lib/mleague/stats";
 import { formatPoints, formatRating, pointsClass } from "@/lib/mleague/format";
 
@@ -19,21 +33,57 @@ export async function generateMetadata({
   const { slug } = await params;
   const dataset = await getDataset();
   const team = findTeam(dataset, slug);
-  return {
-    title: team ? `${team.name} のレーティング` : "チーム",
-  };
+  if (!team) {
+    return { title: "チーム" };
+  }
+  return pageMetadata({
+    title: `${team.name} のレーティング`,
+    description: teamSeoDescription(team),
+    path: `/teams/${team.slug}`,
+    image: team.logo || undefined,
+  });
 }
 
-export default async function TeamPage({ params }: PageProps<"/teams/[slug]">) {
+export default async function TeamPage({
+  params,
+  searchParams,
+}: PageProps<"/teams/[slug]">) {
   const { slug } = await params;
+  const query = await searchParams;
   const dataset = await getDataset();
   const team = findTeam(dataset, slug);
   if (!team) notFound();
 
   const latest = team.seasons.find((season) => season.season === dataset.latestSeason) ?? team.seasons.at(-1);
+  const seatedByGame = playersByGameId(dataset.players);
+  const page = paginate(newestFirst(team.history), parsePage(query.page));
+  const rows = page.items.map((event) => {
+    const player = memberForTeamEvent(seatedByGame.get(event.gameId), team.name, event);
+    return {
+      event: eventForGame(player, event.gameId) ?? event,
+      player: player ? { name: player.name, slug: player.slug, photo: player.photo } : undefined,
+    };
+  });
+  const playerHref = new Map(dataset.players.map((item) => [item.name, item.slug]));
+  const ratings = ratingBeforeByGame(
+    dataset.players,
+    page.items.map((event) => event.gameId),
+  );
+  const basePath = `/teams/${team.slug}`;
+
+  const description = teamSeoDescription(team);
 
   return (
     <main className="mx-auto w-full max-w-6xl px-5 py-10">
+      <JsonLd
+        data={teamJsonLd({
+          name: team.name,
+          slug: team.slug,
+          logo: team.logo,
+          description,
+          roster: team.roster,
+        })}
+      />
       <Link href="/#teams" className="text-sm text-[var(--muted)] hover:text-[var(--gold)]">
         ← ランキングへ戻る
       </Link>
@@ -79,6 +129,23 @@ export default async function TeamPage({ params }: PageProps<"/teams/[slug]">) {
       <section className="mt-10">
         <h2 className="mb-3 text-xl font-bold">年度別・累計成績</h2>
         <SeasonTable seasons={team.seasons} career={team.career} />
+      </section>
+
+      <section id="games" className="mt-10 scroll-mt-24">
+        <h2 className="mb-3 text-xl font-bold">対局結果</h2>
+        <p className="mb-3 text-sm text-[var(--muted)]">各対局の出場選手と着順です。</p>
+        <GameHistoryTable
+          rows={rows}
+          playerHref={playerHref}
+          ratingBeforeByGame={ratings}
+          showPlayer
+        />
+        <Pager
+          current={page.current}
+          pageCount={page.pageCount}
+          total={page.total}
+          hrefFor={(item) => gamesHref(basePath, item)}
+        />
       </section>
     </main>
   );

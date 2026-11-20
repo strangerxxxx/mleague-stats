@@ -12,6 +12,7 @@ import {
 const DATA_DIR = path.join(process.cwd(), "data");
 const DATA_REVALIDATE_SECONDS = 180;
 const MEMORY_TTL_MS = DATA_REVALIDATE_SECONDS * 1000;
+const FETCH_TIMEOUT_MS = 10_000;
 
 type JsonName = "games.json" | "site.json" | "dataset.json";
 
@@ -114,8 +115,16 @@ function isComputedProfiles(value: unknown): value is ComputedProfiles {
 }
 
 async function loadJson<T>(name: JsonName): Promise<T | null> {
-  const fromS3 = await loadFromS3<T>(name);
-  if (fromS3) return fromS3;
+  if (preferLocalData()) {
+    const fromFile = await loadFromFile<T>(name);
+    if (fromFile) return fromFile;
+  }
+  try {
+    const fromS3 = await loadFromS3<T>(name);
+    if (fromS3) return fromS3;
+  } catch (error) {
+    console.warn(`Could not load ${name} from S3`, error);
+  }
   try {
     const fromUrl = await loadFromUrl<T>(name);
     if (fromUrl) return fromUrl;
@@ -123,6 +132,10 @@ async function loadJson<T>(name: JsonName): Promise<T | null> {
     console.warn(`Could not load ${name} from URL`, error);
   }
   return loadFromFile<T>(name);
+}
+
+function preferLocalData(): boolean {
+  return process.env.NODE_ENV !== "production" && !process.env.GAMES_S3_BUCKET;
 }
 
 async function saveJson(name: JsonName, data: unknown): Promise<void> {
@@ -256,5 +269,6 @@ function fetchInit(): RequestInit {
   return {
     headers: { Accept: "application/json" },
     cache: "no-store",
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   };
 }

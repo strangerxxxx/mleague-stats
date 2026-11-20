@@ -17,7 +17,7 @@ export function LatestMatchDay({ day }: { day: MatchDay }) {
   return (
     <section id="recent" className="mb-12">
       <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">直近の試合</h1>
+        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">直近の試合</h2>
         <p className="text-base text-[var(--muted)]">{formatDateWithWeekday(day.date)}</p>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
