@@ -71,6 +71,5 @@ test("nextUpcomingMatchDay keeps the next JST day and drops past cards", () => {
   );
   assert.equal(day.tables[0]?.teams[0]?.name, "EARTH JETS");
   assert.equal(day.tables[0]?.teams[0]?.slug, "earth-jets");
-  assert.equal(day.tables[0]?.teams[0]?.shortName, "ジェッツ");
   assert.equal(day.tables[0]?.teams[0]?.rating, 1512.3);
 });

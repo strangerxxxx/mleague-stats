@@ -3,7 +3,6 @@ import type { MatchCard, RankingRow } from "./types";
 
 export type UpcomingSeat = {
   name: string;
-  shortName: string;
   slug: string;
   logo: string;
   color: string;
@@ -63,7 +62,6 @@ export function nextUpcomingMatchDay(
         const row = bySlug.get(slug);
         return {
           name: meta?.name ?? team.name,
-          shortName: meta?.shortName ?? team.name,
           slug,
           logo: team.logo || row?.logo || "",
           color: meta?.color ?? row?.color ?? "#888",

@@ -25,14 +25,7 @@ export function UpcomingMatchDay({ day }: { day: UpcomingMatchDayData }) {
                 >
                   <span className="person min-w-0">
                     <TeamMark src={team.logo} name={team.name} color={team.color} size={36} />
-                    <span className="min-w-0">
-                      <span className="block truncate font-medium">{team.name}</span>
-                      {team.shortName !== team.name ? (
-                        <span className="mt-0.5 block truncate text-xs text-[var(--muted)]">
-                          {team.shortName}
-                        </span>
-                      ) : null}
-                    </span>
+                    <span className="truncate font-medium">{team.name}</span>
                   </span>
                   {team.rating != null ? (
                     <span className="shrink-0 font-mono text-sm text-[var(--gold-2)]">
